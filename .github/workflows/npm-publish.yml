@@ -2,6 +2,10 @@ name: Node.js Package
 on:
   release:
     types: [created]
+
+env:
+  FORK_URL: https://eth-mainnet.alchemyapi.io/v2/${{ secrets.ALCHEMY_API }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
