@@ -1,7 +1,7 @@
 {
   "name": "@workhard/starter",
   "description": "Template Repository for WHF Fork",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "homepage": "https://workhard.finance",
   "repository": {
     "type": "git",
