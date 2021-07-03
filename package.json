@@ -69,7 +69,8 @@
   "license": "GPL-3.0-or-later",
   "dependencies": {
     "@openzeppelin/contracts": "^4.2.0",
-    "@workhard/protocol": "^1.0.3"
+    "@workhard/protocol": "^1.0.3",
+    "node-fetch": "^2.6.1"
   },
   "lint-staged": {
     "{scripts,test,contracts}/**/*.{js,ts,sol}": [
