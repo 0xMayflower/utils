@@ -23,6 +23,11 @@ contract FeeManager is Governed, AccessControlEnumerable {
     address public rewardToken;
     address public weth9;
 
+    event DividendPoolUpdated(address pool);
+    event RewardTokenUpdated(address pool);
+    event FundRescued(address token, uint256 amount);
+    event Rewarded(address token, uint256 amount, uint256 rewardAmount);
+
     constructor(
         address gov_,
         address dividendPool_,
@@ -33,7 +38,6 @@ contract FeeManager is Governed, AccessControlEnumerable {
         dividendPool = dividendPool_;
         rewardToken = rewardToken_;
         weth9 = weth9_;
-        IERC20(rewardToken).approve(dividendPool_, type(uint256).max);
         _setRoleAdmin(FEE_MANAGER_ADMIN_ROLE, FEE_MANAGER_ADMIN_ROLE);
         _setRoleAdmin(EXECUTOR_ROLE, FEE_MANAGER_ADMIN_ROLE);
         _setRoleAdmin(DEX_ROLE, FEE_MANAGER_ADMIN_ROLE);
@@ -52,8 +56,19 @@ contract FeeManager is Governed, AccessControlEnumerable {
         IWETH9(weth9).deposit{value: msg.value}();
     }
 
+    function updateDividendPool(address dividendPool_) public governed {
+        dividendPool = dividendPool_;
+        emit DividendPoolUpdated(dividendPool_);
+    }
+
+    function updateRewardToken(address rewardToken_) public governed {
+        rewardToken = rewardToken_;
+        emit RewardTokenUpdated(rewardToken_);
+    }
+
     function rescueFund(address erc20, uint256 amount) public governed {
         IERC20(erc20).transfer(gov(), amount);
+        emit FundRescued(erc20, amount);
     }
 
     function rewindUniV2(address pair, uint256 amount)
@@ -85,6 +100,8 @@ contract FeeManager is Governed, AccessControlEnumerable {
         uint256 swappedAmount = IERC20(rewardToken)
         .balanceOf(address(this))
         .sub(prevBal);
+        IERC20(rewardToken).approve(dividendPool, swappedAmount);
         IDividendPool(dividendPool).distribute(rewardToken, swappedAmount);
+        emit Rewarded(srcToken, amount, swappedAmount);
     }
 }
