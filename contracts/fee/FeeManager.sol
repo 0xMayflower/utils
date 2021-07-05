@@ -9,7 +9,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import {IUniswapV2Pair} from "../helpers/uni-v2/interfaces/IUniswapV2Pair.sol";
 import {IWETH9} from "../helpers/weth9/IWETH9.sol";
-import "hardhat/console.sol";
 
 contract FeeManager is Governed, AccessControlEnumerable {
     using SafeMath for uint256;
