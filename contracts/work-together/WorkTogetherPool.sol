@@ -5,6 +5,7 @@ import "./Ticket.sol";
 import "../helpers/sortion-sum-tree-factory/SortitionSumTreeFactory.sol";
 import "../helpers/uniform-random-number/UniformRandomNumber.sol";
 import "../helpers/rng-service/RNGInterface.sol";
+import "hardhat/console.sol";
 
 contract WorkTogetherPool is IWorkTogetherPool {
     using SortitionSumTreeFactory for SortitionSumTreeFactory.SortitionSumTrees;
@@ -164,10 +165,9 @@ contract WorkTogetherPool is IWorkTogetherPool {
             msg.sender,
             (totalTickets / 100) * DISTRIBUTE_CALLER_REWARD
         );
+        rewardToken.transfer(_selectedRecipient(), poolReward());
         ticket.burn(ticket.balanceOf(address(this)));
         totalTickets = 0;
-
-        rewardToken.transfer(_selectedRecipient(), poolReward());
         emit DistributeReward(
             _selectedRecipient(),
             poolReward(),
@@ -179,7 +179,7 @@ contract WorkTogetherPool is IWorkTogetherPool {
         return
             sortitionSumTrees.stakeOf(
                 TREE_KEY,
-                bytes32(sha256(abi.encodePacked(msg.sender, "address")))
+                bytes32(uint256(uint160(user)))
             );
     }
 
@@ -210,22 +210,6 @@ contract WorkTogetherPool is IWorkTogetherPool {
             "lock block number is bigger than current block number"
         );
         return rng.randomNumber(rngRequest.id);
-    }
-
-    function draw(uint256 randomNumber) public view returns (address) {
-        address selected;
-        if (totalTickets == 0) {
-            selected = address(0);
-        } else {
-            uint256 token = UniformRandomNumber.uniform(
-                randomNumber,
-                totalTickets
-            );
-            selected = address(
-                uint160(uint256(sortitionSumTrees.draw(TREE_KEY, token)))
-            );
-        }
-        return selected;
     }
 
     function _currentTime() internal view virtual returns (uint256) {

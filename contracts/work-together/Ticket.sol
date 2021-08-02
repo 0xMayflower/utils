@@ -2,11 +2,16 @@ pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 import "./ITicketDistributor.sol";
+import "hardhat/console.sol";
 
 contract Ticket is ERC20PresetMinterPauser {
     ITicketDistributor public controller;
 
-    constructor() ERC20PresetMinterPauser("WHF-TICKET", "TICKET") {}
+    constructor(ITicketDistributor distributor)
+        ERC20PresetMinterPauser("WHF-TICKET", "TICKET")
+    {
+        controller = distributor;
+    }
 
     //    function initialize (
     //        string memory _name,

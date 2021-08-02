@@ -35,11 +35,7 @@ contract WorkTogetherPoolManager {
         return poolAddresses[poolIndex];
     }
 
-    function getLatestPool() public view returns (address) {
-        return poolAddresses[currentIndex];
-    }
-
     function getSizeOfPool() public view returns (uint256) {
-        return currentIndex + 1;
+        return currentIndex;
     }
 }
