@@ -6,12 +6,14 @@ import {Governed} from "@workhard/protocol/contracts/core/governance/Governed.so
 import {IDividendPool} from "@workhard/protocol/contracts/core/dividend/interfaces/IDividendPool.sol";
 import {AccessControlEnumerable} from "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import {IUniswapV2Pair} from "../helpers/uni-v2/interfaces/IUniswapV2Pair.sol";
 import {IWETH9} from "../helpers/weth9/IWETH9.sol";
 
 contract FeeManager is Governed, AccessControlEnumerable {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     bytes32 public constant FEE_MANAGER_ADMIN_ROLE =
         keccak256("FEE_MANAGER_ADMIN_ROLE");
@@ -88,18 +90,18 @@ contract FeeManager is Governed, AccessControlEnumerable {
             IERC20(srcToken).balanceOf(address(this)) >= amount,
             "FeeManager: NOT ENOUGH BALANCE"
         );
-        require(srcToken != rewardToken, "FeeManager: SPENDING YAPE");
+        require(srcToken != rewardToken, "FeeManager: SPENDING REWARD TOKEN");
         uint256 prevBal = IERC20(rewardToken).balanceOf(address(this));
-        IERC20(srcToken).approve(dex, amount);
+        IERC20(srcToken).safeApprove(dex, amount);
         (bool success, bytes memory result) = dex.call(swapData);
         require(
             success,
             string(abi.encodePacked("failed to swap tokens: ", result))
         );
         uint256 swappedAmount = IERC20(rewardToken)
-        .balanceOf(address(this))
-        .sub(prevBal);
-        IERC20(rewardToken).approve(dividendPool, swappedAmount);
+            .balanceOf(address(this))
+            .sub(prevBal);
+        IERC20(rewardToken).safeApprove(dividendPool, swappedAmount);
         IDividendPool(dividendPool).distribute(rewardToken, swappedAmount);
         emit Rewarded(srcToken, amount, swappedAmount);
     }
