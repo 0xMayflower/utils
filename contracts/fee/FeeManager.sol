@@ -8,6 +8,7 @@ import {AccessControlEnumerable} from "@openzeppelin/contracts/access/AccessCont
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {IUniswapV2Pair} from "../helpers/uni-v2/interfaces/IUniswapV2Pair.sol";
 import {IWETH9} from "../helpers/weth9/IWETH9.sol";
 
@@ -27,7 +28,8 @@ contract FeeManager is Governed, AccessControlEnumerable {
     event DividendPoolUpdated(address pool);
     event RewardTokenUpdated(address pool);
     event FundRescued(address token, uint256 amount);
-    event Rewarded(address token, uint256 amount, uint256 rewardAmount);
+    event BuyBacked(uint256 rewardAmount);
+    event Rewarded(uint256 rewardAmount);
 
     constructor(
         address gov_,
@@ -86,6 +88,29 @@ contract FeeManager is Governed, AccessControlEnumerable {
         uint256 amount,
         bytes calldata swapData
     ) public onlyRole(EXECUTOR_ROLE) onlyAllowedDex(dex) {
+        _swap(dex, srcToken, amount, swapData);
+    }
+
+    function distribute(uint256 amount) public onlyRole(EXECUTOR_ROLE) {
+        _distribute(amount);
+    }
+
+    function swapAndDistribute(
+        address dex,
+        address srcToken,
+        uint256 amount,
+        bytes calldata swapData
+    ) public onlyRole(EXECUTOR_ROLE) onlyAllowedDex(dex) {
+        _swap(dex, srcToken, amount, swapData);
+        _distribute(type(uint256).max);
+    }
+
+    function _swap(
+        address dex,
+        address srcToken,
+        uint256 amount,
+        bytes calldata swapData
+    ) internal {
         require(
             IERC20(srcToken).balanceOf(address(this)) >= amount,
             "FeeManager: NOT ENOUGH BALANCE"
@@ -101,8 +126,15 @@ contract FeeManager is Governed, AccessControlEnumerable {
         uint256 swappedAmount = IERC20(rewardToken)
             .balanceOf(address(this))
             .sub(prevBal);
-        IERC20(rewardToken).safeApprove(dividendPool, swappedAmount);
-        IDividendPool(dividendPool).distribute(rewardToken, swappedAmount);
-        emit Rewarded(srcToken, amount, swappedAmount);
+        emit BuyBacked(swappedAmount);
+    }
+
+    function _distribute(uint256 amount) internal {
+        uint256 remaining = IERC20(rewardToken).balanceOf(address(this));
+        uint256 amountToDistribute = Math.min(amount, remaining);
+
+        IERC20(rewardToken).safeApprove(dividendPool, amountToDistribute);
+        IDividendPool(dividendPool).distribute(rewardToken, amountToDistribute);
+        emit Rewarded(amountToDistribute);
     }
 }

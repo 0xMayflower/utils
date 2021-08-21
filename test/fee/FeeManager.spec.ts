@@ -12,7 +12,7 @@ const MAINNET_DAI = '0x6B175474E89094C44Da98b954EedeAC495271d0F'
 const MAINNET_1INCH = '0x11111112542d85b3ef69ae05771c2dccff4faa26'
 const MAINNET_WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
 
-describe('FeeManager.sol', () => {
+describe('FeeManager02.sol', () => {
   let snapshot: string
   let gov: SignerWithAddress, executor: SignerWithAddress
   let forkedDAO: DAO
@@ -86,7 +86,7 @@ describe('FeeManager.sol', () => {
         feeManager.address, // should be feeManager.address in the production version
         1
       )
-      await feeManager.connect(executor).swap(swapData.to, MAINNET_WETH, parseEther('1'), swapData.data)
+      await feeManager.connect(executor).swapAndDistribute(swapData.to, MAINNET_WETH, parseEther('1'), swapData.data)
       expect(
         await IDividendPool__factory.connect(forkedDAO.dividendPool.address, ethers.provider).totalDistributed(
           MAINNET_DAI
