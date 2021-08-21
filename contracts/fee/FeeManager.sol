@@ -74,14 +74,6 @@ contract FeeManager is Governed, AccessControlEnumerable {
         emit FundRescued(erc20, amount);
     }
 
-    function rewindUniV2(address pair, uint256 amount)
-        public
-        onlyRole(EXECUTOR_ROLE)
-    {
-        IUniswapV2Pair(pair).transfer(pair, amount); // send liquidity to pair
-        IUniswapV2Pair(pair).burn(address(this));
-    }
-
     function swap(
         address dex,
         address srcToken,
@@ -103,6 +95,22 @@ contract FeeManager is Governed, AccessControlEnumerable {
     ) public onlyRole(EXECUTOR_ROLE) onlyAllowedDex(dex) {
         _swap(dex, srcToken, amount, swapData);
         _distribute(type(uint256).max);
+    }
+
+    function rewindUniV2(address pair, uint256 amount)
+        public
+        onlyRole(EXECUTOR_ROLE)
+    {
+        IUniswapV2Pair(pair).transfer(pair, amount); // send liquidity to pair
+        IUniswapV2Pair(pair).burn(address(this));
+    }
+
+    function rewindAll(address[] memory pairs) public onlyRole(EXECUTOR_ROLE) {
+        for (uint256 i = 0; i < pairs.length; i++) {
+            address pair = pairs[i];
+            uint256 balance = IERC20(pair).balanceOf(address(this));
+            _rewindUniV2(pair, balance);
+        }
     }
 
     function _swap(
@@ -136,5 +144,10 @@ contract FeeManager is Governed, AccessControlEnumerable {
         IERC20(rewardToken).safeApprove(dividendPool, amountToDistribute);
         IDividendPool(dividendPool).distribute(rewardToken, amountToDistribute);
         emit Rewarded(amountToDistribute);
+    }
+
+    function _rewindUniV2(address pair, uint256 amount) internal {
+        IUniswapV2Pair(pair).transfer(pair, amount); // send liquidity to pair
+        IUniswapV2Pair(pair).burn(address(this));
     }
 }
